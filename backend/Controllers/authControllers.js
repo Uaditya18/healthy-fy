@@ -122,7 +122,7 @@ export const login = async(req, res) => {
       status: true,
       message: "Successfully login",
       token,
-      dat:{...rest},
+      data:{...rest},
       role,
     });
     

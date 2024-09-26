@@ -1,13 +1,21 @@
+// start from toast
+
 import React, { useState } from 'react'
 import signupImg from './../assets/images/signup.gif'
 import avatar from './../assets/images/doctor-img01.png'
-import {Link} from 'react-router-dom'
+import {Link, useNavigate} from 'react-router-dom'
+import uploadImageToCloudinary  from '../utils/uploadCloudinary'
+import {toast} from 'react-toastify' // // problem occuring statement ...
+import { BASE_URL } from '../config'
+import {HashLoader} from 'react-spinners'
 
 const Signup = () => {
 
 
-  const[selectedPhoto,setSelectedPhot] = useState(null)
+  const[selectedFile,setSelectedFile] = useState(null)
   const[previewUrl,setPreviewUrl] = useState('')
+  const[loading,setLoading]=useState(false);
+
 
   const [formData,SetFormData] = useState(
     {
@@ -16,10 +24,12 @@ const Signup = () => {
       password:'',
       role:"patient",
       gender:'',
-      photo:selectedPhoto
+      photo:selectedFile
 
     }
   )
+
+  const navigate = useNavigate();
 
   const handleInputChange = e=>{
       SetFormData({...formData,[e.target.name]:e.target.value})
@@ -28,11 +38,39 @@ const Signup = () => {
   const handleFileInputChange= async event=>
   {
     const file = event.target.files[0]
-    // later we will use cloudanry to upload file 
+    //  using cloudanry to upload file 
+    const data = await uploadImageToCloudinary(file);
+    setPreviewUrl(data.url)
+    setSelectedFile(data.url)
+    SetFormData({...formData, photo: data.url});
+
   }
 
   const submitHandler = async event=>{
     event.preventDefault()
+    setLoading(true)
+    try {
+      const res = await fetch(`${BASE_URL}/auth/register`,{
+        method:'post',
+        headers:{
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify(formData)
+      })
+
+      const {message} = await res.json()
+      if(!res.ok){
+        throw new Error(message)
+      }
+      
+      setLoading(false)
+      toast.success(message) // toast is not working
+      navigate('/login')
+      
+
+    } catch (error) {
+      setLoading(false)
+    }
   }
 
   return (
@@ -51,26 +89,31 @@ const Signup = () => {
             <h3 className='text-headingColor text-[22px] leading-9 font-bold mb-10'>create an <span className='text-primaryColor'>account</span></h3>
 
             <form onSubmit={submitHandler}> 
-              <div className=''>
+              <div className='mb-5'>
               <input type="text" placeholder='Full Name' name='name' 
                       value={formData.name}
                       onChange={handleInputChange}
                       className='w-full m-4 px-4 py-3 border-b border-solid border-[#0066ff61] focus:outline-none
                       focus:border-b-primaryColor text-[22px] leading-7 text-headingColor rounded cursor-pointer shadow-md' required />
               </div>
-              <div className=''>
-              <input type="email" placeholder='Enter your email' name='email' 
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className='w-full m-4 px-4 py-3 border-b border-solid border-[#0066ff61] focus:outline-none
-                      focus:border-b-primaryColor text-[22px] leading-7 text-headingColor rounded cursor-pointer shadow-md' required />
+              <div className='mb-5'>
+              <input
+              type="email" 
+              placeholder='Enter your email' 
+              name='email' 
+              value={formData.email}
+              onChange={handleInputChange}
+              className='w-full m-4 px-4 py-3 border-b border-solid border-[#0066ff61] focus:outline-none
+              focus:border-b-primaryColor text-[22px] leading-7 text-headingColor rounded cursor-pointer shadow-md' required />
               </div>
-              <div className=''>
-              <input type="password" placeholder='enter password' name='name' 
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className='w-full m-4 px-4 py-3 border-b border-solid border-[#0066ff61] focus:outline-none
-                      focus:border-b-primaryColor text-[22px] leading-7 text-headingColor rounded cursor-pointer shadow-md' required />
+              <div className='mb-5' >
+              <input 
+              type="password"
+               placeholder='enter password' name='password' 
+                value={formData.password}
+                onChange={handleInputChange}
+                className='w-full m-4 px-4 py-3 border-b border-solid border-[#0066ff61] focus:outline-none
+                focus:border-b-primaryColor text-[22px] leading-7 text-headingColor rounded cursor-pointer shadow-md' required />
               </div>
 
               <div className='mb-5 flex item-center justify-between p-4'>
@@ -79,28 +122,30 @@ const Signup = () => {
                   value={formData.role}
                   onChange={handleInputChange}
                   className='text-textColor font-semibold text-[15px] leading-7 px-4 py-3 focus:outline '> 
+                    <option value="">select</option>
                     <option value="patient">Patient</option>
-                    <option value="Doctor">Doctor</option>
+                    <option value="doctor">Doctor</option>
                   </select>
                   </label>
 
                   <label className='text-headingColor font-bold text-[16px] leading-7'>Gender:
-                  <select name="gender" 
-                  value={formData.gender}
-                  onChange={handleInputChange}
-                  className='text-textColor font-semibold text--[15px] leading-7 px-4 py-3 focus:outline '> 
-                    <option value="male">male</option>
-                    <option value="female">female</option>
-                    <option value="others">others</option>
-                  </select>
+                      <select name="gender" 
+                          value={formData.gender}
+                          onChange={handleInputChange}
+                          className='text-textColor font-semibold text-[15px] leading-7 px-4 py-3 focus:outline'> 
+                            <option value="">select</option>
+                            <option value="male">male</option>
+                            <option value="female">female</option>
+                            <option value="others">others</option>
+                      </select>
                   </label>
               </div>
 
               <div className='mb-5 flex items-center gap-3'>
-                <figure className='w-[60px] rounded-full border-2 border-solid border-primaryColor
+               {selectedFile && <figure className='w-[60px] rounded-full border-2 border-solid border-primaryColor
                 flex items-center justify-center'>
-                  <img src={avatar} alt="" className='w-full rounded-full' />
-                </figure>
+                  <img src={previewUrl} alt="" className='w-full rounded-full' />
+                </figure>}
 
                <div className='relative w-[130px] h-[50px]'>
                <input 
@@ -117,7 +162,9 @@ const Signup = () => {
               </div>
 
               <div className='flex flex-col items-center pb-5'>
-                    <button type='submit' className='btn w-2/3 ] '>Sign Up Here </button>
+                    <button 
+                    disabled={loading && true}
+                    type='submit' className='btn w-2/3 ] '>{loading?<HashLoader size={35} color='#ffffff' />:`Sign Up Here`} </button>
                   </div>
 
                   <p className='mt-5 text-textColor text-center my-0'>Already have an account? 

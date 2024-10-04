@@ -44,7 +44,7 @@ export const getCheckoutSession = async(req, res) => {
       session:session.id
     })
 
-
+    
     await booking.save()
 
     res.status(200).json({success:true, message:'Successfully paid',session})

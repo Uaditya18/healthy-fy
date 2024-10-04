@@ -12,7 +12,7 @@ const CheckoutSuccess = () =>{
               <p>Have great day! </p>
               <div className='py-10 text-center'>
                   <Link
-                  to="/home"
+                  to={"/home"}
                   className='px-12 bg-buttonBgColor text-white font-semibold py-3'>
                   Go Back To Home
                   </Link>
